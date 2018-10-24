@@ -2,7 +2,9 @@ package routers
 
 import (
 	"github.com/gin-gonic/gin"
+	"niurenshuo/middleware/jwt"
 	"niurenshuo/pkg/setting"
+	"niurenshuo/routers/api"
 	"niurenshuo/routers/api/v1"
 )
 
@@ -16,7 +18,10 @@ func InitRouter() *gin.Engine {
 
 	gin.SetMode(setting.RunMode)
 
+	r.GET("/auth", api.GetAuth)
+
 	apiV1 := r.Group("/api/v1")
+	apiV1.Use(jwt.JWT())
 	{
 		//获取评论列表
 		apiV1.GET("/comments", v1.GetComments)
@@ -26,6 +31,7 @@ func InitRouter() *gin.Engine {
 		apiV1.PUT("/comments/:id", v1.EditComment)
 		//删除指定标签
 		apiV1.DELETE("/comments/:id", v1.DeleteComment)
+
 	}
 
 	return r

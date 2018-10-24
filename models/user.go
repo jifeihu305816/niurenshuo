@@ -6,9 +6,8 @@ import (
 )
 
 type UserModel struct {
-	gorm.Model           //继承
-	UId           string `gorm:"primary_key"` //Guid
-	UserName      string
+	gorm.Model    //继承
+	NickName      string
 	Avatar        string          //头像
 	Locked        int             //是否锁定
 	LastVisitTime time.Time       // 最后登陆时间
@@ -18,7 +17,7 @@ type UserModel struct {
 }
 
 type UserDetailModel struct {
-	UId      string `gorm:"primary_key"` //Guid
+	UId      int    `gorm:"primary_key"` //Guid
 	Gender   string //性别
 	RealName string // 真实姓名
 	Email    string //邮箱
