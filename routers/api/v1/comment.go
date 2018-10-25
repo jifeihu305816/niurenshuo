@@ -12,7 +12,14 @@ import (
 	"niurenshuo/pkg/util"
 )
 
-//获取评论
+// @Summary 新增评论
+// @Product json
+// @Param status query int false "状态"
+// @Param topic_id query int true "主题ID"
+// @Param topic_type query int true "主题类型"
+// @Param web_id query int true "网站id"
+// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/comments [get]
 func GetComments(c *gin.Context) {
 
 	maps := make(map[string]interface{})
@@ -72,7 +79,11 @@ func GetComments(c *gin.Context) {
 
 }
 
-//更新评论
+// @Summary 更新评论
+// @Product json
+// @Param id param int true "ID"
+// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/comments/{id} [put]
 func EditComment(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 	valid := validation.Validation{}
@@ -110,7 +121,17 @@ func EditComment(c *gin.Context) {
 
 }
 
-//新增评论
+// @Summary 新增评论
+// @Product json
+// @Param comment_id query int true "评论ID"
+// @Param topic_id query int true "主题ID"
+// @Param topic_type query int true "主题类型"
+// @Param web_id query int true "网站ID"
+// @Param from_uid query int true "评论用户"
+// @Param to_uid query int true "目标用户"
+// @Param content query string true "评论内容"
+// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/comments [post]
 func AddComment(c *gin.Context) {
 
 	code := e.INVALID_PARAMS
@@ -157,7 +178,11 @@ func AddComment(c *gin.Context) {
 	})
 }
 
-//删除评论
+// @Summary 删除评论
+// @Product json
+// @Param id param int true "ID"
+// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
+// @Router /api/v1/comments/{id} [delete]
 func DeleteComment(c *gin.Context) {
 	id := com.StrTo(c.Param("id")).MustInt()
 
