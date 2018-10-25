@@ -2,7 +2,7 @@ package setting
 
 import (
 	"github.com/go-ini/ini"
-	"log"
+	"niurenshuo/pkg/logging"
 	"time"
 )
 
@@ -24,7 +24,7 @@ func init() {
 	//解析app.ini配置
 	Cfg, err = ini.Load("conf/app.ini")
 	if err != nil {
-		log.Printf("Fail to parse 'conf/app.ini': %v ", err)
+		logging.Fatal("Fail to parse 'conf/app.ini': %v ", err)
 	}
 
 	//加载配置
@@ -43,7 +43,7 @@ func LoadBase() {
 func LoadServer() {
 	sec, err := Cfg.GetSection("server")
 	if err != nil {
-		log.Fatalf("Fail to get section 'server': %v", err)
+		logging.Fatal("Fail to get section 'server': %v", err)
 	}
 
 	HTTPPort = sec.Key("HTTP_PORT").MustInt(8000)
@@ -55,7 +55,7 @@ func LoadServer() {
 func LoadApp() {
 	sec, err := Cfg.GetSection("app")
 	if err != nil {
-		log.Fatalf("Fail to get section 'app': %v", err)
+		logging.Fatal("Fail to get section 'app': %v", err)
 	}
 
 	JwtSecret = sec.Key("JWT_SECRET").MustString("hGZrxoPwj7vMZtAt")

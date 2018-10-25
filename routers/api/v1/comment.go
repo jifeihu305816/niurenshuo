@@ -4,10 +4,10 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"niurenshuo/models"
 	"niurenshuo/pkg/e"
+	"niurenshuo/pkg/logging"
 	"niurenshuo/pkg/setting"
 	"niurenshuo/pkg/util"
 )
@@ -60,7 +60,7 @@ func GetComments(c *gin.Context) {
 		data["total"] = models.GetCommentTotal(maps)
 	} else {
 		for _, err := range valid.Errors {
-			log.Println(err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
@@ -98,7 +98,7 @@ func EditComment(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Println(err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
@@ -146,7 +146,7 @@ func AddComment(c *gin.Context) {
 		code = e.SUCCESS
 	} else {
 		for _, err := range valid.Errors {
-			log.Println(err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
@@ -174,7 +174,7 @@ func DeleteComment(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Println(err.Key, err.Message)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
