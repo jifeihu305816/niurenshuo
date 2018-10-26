@@ -12,9 +12,10 @@ import (
 	"niurenshuo/pkg/util"
 )
 
-// @Summary 新增评论
+// @Summary 获取评论
 // @Product json
-// @Param status query int false "状态"
+// @Param token query string true "token"
+// @Param status query int false "状态 0或者1"
 // @Param topic_id query int true "主题ID"
 // @Param topic_type query int true "主题类型"
 // @Param web_id query int true "网站id"
@@ -81,7 +82,9 @@ func GetComments(c *gin.Context) {
 
 // @Summary 更新评论
 // @Product json
-// @Param id param int true "ID"
+// @Param id path int true "ID"
+// @Param token query string true "token"
+// @Param status query int false "status"
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments/{id} [put]
 func EditComment(c *gin.Context) {
@@ -122,14 +125,16 @@ func EditComment(c *gin.Context) {
 }
 
 // @Summary 新增评论
+// @Accept  x-www-form-urlencoded
 // @Product json
-// @Param comment_id query int true "评论ID"
-// @Param topic_id query int true "主题ID"
-// @Param topic_type query int true "主题类型"
-// @Param web_id query int true "网站ID"
-// @Param from_uid query int true "评论用户"
-// @Param to_uid query int true "目标用户"
-// @Param content query string true "评论内容"
+// @Param token query string true "token"
+// @Param comment_id formData  int false "评论ID"
+// @Param topic_id formData  int true "主题ID"
+// @Param topic_type formData  int true "主题类型"
+// @Param web_id formData  int true "网站ID"
+// @Param from_uid formData  int true "评论用户"
+// @Param to_uid formData  int true "目标用户"
+// @Param content formData  string true "评论内容"
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments [post]
 func AddComment(c *gin.Context) {
@@ -180,7 +185,8 @@ func AddComment(c *gin.Context) {
 
 // @Summary 删除评论
 // @Product json
-// @Param id param int true "ID"
+// @Param token query string true "token"
+// @Param id path int true "ID"
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments/{id} [delete]
 func DeleteComment(c *gin.Context) {

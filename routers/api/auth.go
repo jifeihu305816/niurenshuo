@@ -16,6 +16,13 @@ type Auth struct {
 	IdentityType string `valid:"Required; MaxSize(50)"` //登录类型：手机 邮箱 用户名 或第三方
 }
 
+// @Summary 获取TOKEN
+// @Product json
+// @Param username query string true "标识:手机 邮箱 用户名或第三方的唯一标识"
+// @Param password query string true "密码凭证:密码或TOKEN"
+// @Param login_type query string true "登录类型 phone手机 email邮箱 name用户名 third第三方"
+// @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
+// @Router /auth [get]
 func GetAuth(c *gin.Context) {
 	identifier := c.Query("username")
 	credential := c.Query("password")

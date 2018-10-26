@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"niurenshuo/pkg/logging"
 )
 
 type Comment struct {
@@ -31,7 +32,7 @@ func GetCommentTotal(maps interface{}) (count int) {
 //添加评论
 func AddComment(data map[string]interface{}) bool {
 
-	db.Create(&Comment{
+	if err := db.Create(&Comment{
 		CommentId: data["comment_id"].(int),
 		Content:   data["content"].(string),
 		TopicId:   data["topic_id"].(int),
@@ -40,7 +41,9 @@ func AddComment(data map[string]interface{}) bool {
 		FromUid:   data["from_uid"].(int),
 		ToUid:     data["to_uid"].(int),
 		Status:    1,
-	})
+	}).Error; err != nil {
+		logging.Fatal(err)
+	}
 	return true
 }
 
@@ -64,10 +67,16 @@ func EditComment(id int, data interface{}) bool {
 	return true
 }
 
-//删除评论
+//软删除评论
 func DeleteComment(id int) bool {
 	var comment Comment
 	comment.ID = uint(id)
 	db.Delete(&comment)
+	return true
+}
+
+//硬删除评论
+func CleanAllComment() bool {
+	db.Unscoped().Where("deleted_at != ? ", 0).Delete(&Comment{})
 	return true
 }
