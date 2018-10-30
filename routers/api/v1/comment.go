@@ -64,7 +64,7 @@ func GetComments(c *gin.Context) {
 
 	if !valid.HasErrors() {
 		code = e.SUCCESS
-		data["lists"] = models.GetComments(util.GetPage(c), setting.PageSize, maps)
+		data["lists"] = models.GetComments(util.GetPage(c), setting.AppSetting.PageSize, maps)
 		data["total"] = models.GetCommentTotal(maps)
 	} else {
 		for _, err := range valid.Errors {
