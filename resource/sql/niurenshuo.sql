@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50717
 File Encoding         : 65001
 
-Date: 2018-10-24 20:43:38
+Date: 2018-10-30 19:00:32
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -21,7 +21,7 @@ SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `nrs_comment`;
 CREATE TABLE `nrs_comment` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `topic_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '主题id',
@@ -35,16 +35,11 @@ CREATE TABLE `nrs_comment` (
   PRIMARY KEY (`id`),
   KEY `idx_web_topic` (`web_id`,`topic_type`,`topic_id`) USING BTREE,
   KEY `idx_cid` (`comment_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='评论';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='评论';
 
 -- ----------------------------
 -- Records of nrs_comment
 -- ----------------------------
-INSERT INTO `nrs_comment` VALUES ('1', '2018-10-23 20:40:18', '2018-10-24 16:29:36', '2018-10-23 21:31:24', '1', '1', 'haha', '1', '1', '1', '0', '0');
-INSERT INTO `nrs_comment` VALUES ('2', '2018-10-23 20:57:10', '2018-10-24 16:29:37', null, '1', '1', 'haha', '1', '1', '0', '0', '0');
-INSERT INTO `nrs_comment` VALUES ('3', '2018-10-23 20:39:23', '2018-10-24 16:29:39', null, '1', '1', 'haha', '1', '1', '1', '0', '0');
-INSERT INTO `nrs_comment` VALUES ('4', '2018-10-24 15:52:57', '2018-10-24 16:29:40', null, '1', '1', 'haha', '1', '1', '1', '2', '0');
-INSERT INTO `nrs_comment` VALUES ('5', '2018-10-24 15:57:00', '2018-10-24 16:35:03', null, '1', '1', 'haha', '2', '1', '1', '1', '2');
 
 -- ----------------------------
 -- Table structure for nrs_reply
