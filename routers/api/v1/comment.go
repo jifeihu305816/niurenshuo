@@ -5,11 +5,11 @@ import (
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"niurenshuo/models"
+	"niurenshuo/pkg/app"
 	"niurenshuo/pkg/e"
-	"niurenshuo/pkg/logging"
 	"niurenshuo/pkg/setting"
 	"niurenshuo/pkg/util"
+	"niurenshuo/service/comment_service"
 )
 
 // @Summary 获取评论
@@ -22,62 +22,62 @@ import (
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments [get]
 func GetComments(c *gin.Context) {
-
-	maps := make(map[string]interface{})
-	data := make(map[string]interface{})
+	appG := app.Gin{c}
 
 	valid := validation.Validation{}
 
 	var status int = -1
-
 	if arg := c.Query("status"); arg != "" {
 		status = com.StrTo(arg).MustInt()
-		maps["status"] = status
 		valid.Range(status, 0, 1, "status").Message("状态只允许0或1")
 	}
 
-	var webId int = -1
+	var webId int
 
-	if arg := c.Query("web_id"); arg != "" {
-		webId = com.StrTo(arg).MustInt()
-		maps["web_id"] = webId
-		valid.Min(webId, 1, "web_id").Message("网站ID必须大于0")
+	webId = com.StrTo(c.Query("web_id")).MustInt()
+	valid.Min(webId, 1, "web_id").Message("网站ID必须大于0")
+
+	var topicId int
+
+	topicId = com.StrTo(c.Query("topic_id")).MustInt()
+	valid.Min(topicId, 1, "topic_id").Message("主题ID必须大于0")
+
+	var topicType int
+
+	topicType = com.StrTo(c.Query("topic_type")).MustInt()
+	valid.Min(topicType, 1, "topic_type").Message("主题类型必须大于0")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
 	}
 
-	var topicId int = -1
-
-	if arg := c.Query("topic_id"); arg != "" {
-		topicId = com.StrTo(arg).MustInt()
-		maps["topic_id"] = topicId
-		valid.Min(topicId, 1, "topic_id").Message("主题ID必须大于0")
+	commentService := comment_service.Comment{
+		WebId:     webId,
+		TopicType: topicType,
+		TopicId:   topicId,
+		PageNum:   util.GetPage(c),
+		PageSize:  setting.AppSetting.PageSize,
 	}
 
-	var topicType int = -1
-
-	if arg := c.Query("topic_type"); arg != "" {
-		topicType = com.StrTo(arg).MustInt()
-		maps["topic_type"] = topicType
-		valid.Min(topicType, 1, "topic_type").Message("主题类型必须大于0")
+	total, err := commentService.Count()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_COUNT_COMMENT_FAIL, nil)
+		return
 	}
 
-	code := e.INVALID_PARAMS
-
-	if !valid.HasErrors() {
-		code = e.SUCCESS
-		data["lists"] = models.GetComments(util.GetPage(c), setting.AppSetting.PageSize, maps)
-		data["total"] = models.GetCommentTotal(maps)
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-		}
+	comments, err := commentService.GetAll()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_GET_COMMENTS_FAIL, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": data,
-	})
+	data := make(map[string]interface{})
+	data["lists"] = comments
+	data["total"] = total
 
+	appG.Response(http.StatusOK, e.SUCCESS, data)
 }
 
 // @Summary 更新评论
@@ -88,40 +88,47 @@ func GetComments(c *gin.Context) {
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments/{id} [put]
 func EditComment(c *gin.Context) {
+
+	appG := app.Gin{C: c}
+
 	id := com.StrTo(c.Param("id")).MustInt()
 	valid := validation.Validation{}
 
-	var status int
-	status = 0
+	var status = 0
 	if arg := c.Query("status"); arg != "" {
 		status = com.StrTo(arg).MustInt()
 		valid.Range(status, 0, 1, "status").Message("状态只允许0或1")
 	}
 
 	valid.Required(id, "id").Message("ID不能为空")
-	code := e.INVALID_PARAMS
 
-	if !valid.HasErrors() {
-		code = e.SUCCESS
-		if models.ExistCommentByID(id) {
-			data := make(map[string]interface{})
-			data["status"] = status
-			models.EditComment(id, data)
-		} else {
-			code = e.ERROR_NOT_EXIST_COMMENT
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-		}
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": make(map[string]string),
-	})
+	commentService := comment_service.Comment{
+		ID:     id,
+		Status: status,
+	}
 
+	exists, err := commentService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_CHECK_EXIST_COMMENT_FAIL, nil)
+	}
+
+	if !exists {
+		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_COMMENT, nil)
+	}
+
+	err = commentService.Edit()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_EDIT_COMMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Summary 新增评论
@@ -139,7 +146,7 @@ func EditComment(c *gin.Context) {
 // @Router /api/v1/comments [post]
 func AddComment(c *gin.Context) {
 
-	code := e.INVALID_PARAMS
+	appG := app.Gin{C: c}
 
 	commentId := com.StrTo(c.PostForm("comment_id")).MustInt()
 	topicId := com.StrTo(c.PostForm("topic_id")).MustInt()
@@ -158,29 +165,28 @@ func AddComment(c *gin.Context) {
 	valid.Required(content, "content").Message("评论内容不能为空")
 	valid.MaxSize(content, 1000, "content").Message("评论内容最长为1000字符")
 
-	if !valid.HasErrors() {
-
-		data := make(map[string]interface{})
-		data["comment_id"] = commentId
-		data["content"] = content
-		data["topic_id"] = topicId
-		data["topic_type"] = topicType
-		data["web_id"] = webID
-		data["from_uid"] = fromUid
-		data["to_uid"] = toUid
-		models.AddComment(data)
-		code = e.SUCCESS
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-		}
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": make(map[string]string),
-	})
+	commentService := comment_service.Comment{
+		CommentId: commentId,
+		Content:   content,
+		TopicId:   topicId,
+		TopicType: topicType,
+		WebId:     webID,
+		FromUid:   fromUid,
+		ToUid:     toUid,
+	}
+
+	if err := commentService.Add(); err != nil {
+		appG.Response(http.StatusOK, e.ERROR_ADD_COMMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Summary 删除评论
@@ -190,28 +196,36 @@ func AddComment(c *gin.Context) {
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/comments/{id} [delete]
 func DeleteComment(c *gin.Context) {
+	appG := app.Gin{C: c}
 	id := com.StrTo(c.Param("id")).MustInt()
-
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("ID必须大于0")
 
-	code := e.INVALID_PARAMS
-	if !valid.HasErrors() {
-		code = e.SUCCESS
-		if models.ExistCommentByID(id) {
-			models.DeleteComment(id)
-		} else {
-			code = e.ERROR_NOT_EXIST_COMMENT
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Info(err.Key, err.Message)
-		}
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": make(map[string]string),
-	})
+	commentService := comment_service.Comment{
+		ID: id,
+	}
+	exists, err := commentService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_CHECK_EXIST_COMMENT_FAIL, nil)
+		return
+	}
+
+	if !exists {
+		appG.Response(http.StatusOK, e.ERROR_NOT_EXIST_COMMENT, nil)
+		return
+	}
+
+	err = commentService.Delete()
+	if err != nil {
+		appG.Response(http.StatusOK, e.ERROR_DELETE_COMMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }

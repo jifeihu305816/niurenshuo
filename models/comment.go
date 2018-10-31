@@ -1,12 +1,9 @@
 package models
 
-import (
-	"github.com/jinzhu/gorm"
-	"niurenshuo/pkg/logging"
-)
+import "github.com/jinzhu/gorm"
 
 type Comment struct {
-	gorm.Model
+	Model
 	CommentId int    `json:"comment_id" gorm:"index:idx_cid"`
 	TopicId   int    `json:"topic_id" gorm:"index:idx_web_topic"`
 	TopicType int    `json:"topic_type" gorm:"index:idx_web_topic"`
@@ -18,21 +15,27 @@ type Comment struct {
 }
 
 //获取评论列表
-func GetComments(pageNum int, pageSize int, maps interface{}) (comments []Comment) {
-	db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&comments)
-	return
+func GetComments(pageNum int, pageSize int, maps interface{}) ([]*Comment, error) {
+	var comments []*Comment
+	if err := db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&comments).Error; err != nil {
+		return nil, err
+	}
+	return comments, nil
 }
 
 //获取评论总数
-func GetCommentTotal(maps interface{}) (count int) {
-	db.Model(&Comment{}).Where(maps).Count(&count)
-	return
+func GetCommentTotal(maps interface{}) (int, error) {
+	var count int
+	if err := db.Model(&Comment{}).Where(maps).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 //添加评论
-func AddComment(data map[string]interface{}) bool {
+func AddComment(data map[string]interface{}) error {
 
-	if err := db.Create(&Comment{
+	comment := Comment{
 		CommentId: data["comment_id"].(int),
 		Content:   data["content"].(string),
 		TopicId:   data["topic_id"].(int),
@@ -40,43 +43,54 @@ func AddComment(data map[string]interface{}) bool {
 		WebId:     data["web_id"].(int),
 		FromUid:   data["from_uid"].(int),
 		ToUid:     data["to_uid"].(int),
-		Status:    1,
-	}).Error; err != nil {
-		logging.Fatal(err)
+		Status:    data["status"].(int),
 	}
-	return true
+	if err := db.Create(&comment).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 //查询评论是否存在
 
-func ExistCommentByID(id int) bool {
+func ExistCommentByID(id int) (bool, error) {
 	var comment Comment
-	db.First(&comment, id)
-	if comment.ID > 0 {
-		return true
+	err := db.Select("id").Where("id = ? AND deleted_on = ? ", id, 0).First(&comment).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, err
 	}
 
-	return false
+	if comment.ID > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 //修改评论
-func EditComment(id int, data interface{}) bool {
+func EditComment(id int, data interface{}) error {
 
-	db.Model(&Comment{}).Where("id = ?", id).Updates(data)
+	if err := db.Model(&Comment{}).Where("id = ? AND deleted_on = ?", id, 0).Updates(data).Error; err != nil {
+		return err
+	}
 
-	return true
+	return nil
 }
 
 //软删除评论
-func DeleteComment(id int) bool {
-	var comment Comment
-	comment.ID = uint(id)
-	db.Delete(&comment)
-	return true
+func DeleteComment(id int) error {
+	if err := db.Where("id = ?", id).Delete(Comment{}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //硬删除评论
-func CleanAllComment() bool {
-	db.Unscoped().Where("deleted_at != ? ", 0).Delete(&Comment{})
-	return true
+func CleanAllComment() error {
+	if err := db.Unscoped().Where("deleted_on != ? ", 0).Delete(&Comment{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"niurenshuo/models"
+	"niurenshuo/pkg/gredis"
 	"niurenshuo/pkg/logging"
 	"niurenshuo/pkg/setting"
 	"niurenshuo/routers"
@@ -19,6 +20,7 @@ func main() {
 	setting.Setup()
 	models.Setup()
 	logging.Setup()
+	gredis.Setup()
 
 	router := routers.InitRouter()
 
